@@ -1,163 +1,45 @@
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Detector de navegador</title>
-<style>
-body {
-  background: #101114;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 35px 20px;
-}
-.card {
-  max-width: 400px;
-  margin: 40px auto;
-  padding: 25px;
-  background: #202127;
-  border-radius: 16px;
-}
-button {
-  width: 100%;
-  padding: 16px;
-  border: 0;
-  border-radius: 10px;
-  background: #3478f6;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
-.small {
-  color: #aaa;
-  font-size: 13px;
-}
-#instructions {
-  display: none;
-  margin-top: 20px;
-  line-height: 1.6;
-}
-</style>
-</head>
-<body>
+const ua = navigator.userAgent || "";
 
-<div class="card">
-  <h2>Continuar en navegador</h2>
+// Navegadores convencionales
+const normalBrowsers = [
+  /Edg\//i,                   // Edge
+  /OPR\//i,                   // Opera
+  /Opera/i,
+  /Chrome\//i,                // Chrome
+  /CriOS\//i,                 // Chrome iOS
+  /Firefox\//i,
+  /FxiOS\//i,
+  /Safari\//i,                // Safari
+  /Brave/i,
+  /SamsungBrowser\//i,
+  /DuckDuckGo/i,
+  /YaBrowser\//i
+];
 
-  <p id="detected">Analizando navegador...</p>
+// Indicadores explícitos de navegador embebido
+const embeddedBrowser = [
+  /; wv\)/i,
+  /\bWebView\b/i,
+  /Instagram/i,
+  /FBAN|FBAV|FB_IAB|FB4A|FBIOS/i,
+  /musical_ly|trill/i,
+  /TikTok/i,
+  /Discord/i,
+  /Snapchat/i,
+  /Telegram/i,
+  /Pinterest/i,
+  /LinkedInApp/i
+];
 
-  <button id="open">
-    Abrir navegador externo
-  </button>
+const isEmbedded = embeddedBrowser.some(
+  regex => regex.test(ua)
+);
 
-  <div id="instructions">
-    <p>
-      No pudimos abrir el navegador automáticamente.
-    </p>
-    <p>
-      Tocá los tres puntos (⋮) de la aplicación
-      y seleccioná "Abrir en navegador".
-    </p>
-  </div>
+const isNormalBrowser = normalBrowsers.some(
+  regex => regex.test(ua)
+);
 
-  <p class="small" id="platform"></p>
-</div>
-
-<script>
-(function () {
-
-  const ua = navigator.userAgent || "";
-
-  // Sistema operativo
-  const isAndroid = /Android/i.test(ua);
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
-
-  // Aplicación de origen
-  const apps = [
-    { name: "Instagram", regex: /Instagram/i },
-    { name: "Facebook", regex: /FBAN|FBAV|FB_IAB|FB4A|FBIOS/i },
-    { name: "Messenger", regex: /MessengerForiOS|FB_IAB/i },
-    { name: "TikTok", regex: /musical_ly|trill|TikTok/i },
-    { name: "Discord", regex: /Discord/i },
-    { name: "Snapchat", regex: /Snapchat/i },
-    { name: "Telegram", regex: /Telegram/i },
-    { name: "X (Twitter)", regex: /Twitter|X-Client/i },
-    { name: "LinkedIn", regex: /LinkedInApp/i },
-    { name: "Pinterest", regex: /Pinterest/i }
-  ];
-
-  const app = apps.find(item => item.regex.test(ua));
-
-  // Detectar si estamos dentro de una aplicación
-  const isAndroidWebView = /; wv\)/i.test(ua);
-
-  const isInApp = !!app || isAndroidWebView;
-
-  const detected = document.getElementById("detected");
-  const platform = document.getElementById("platform");
-  const button = document.getElementById("open");
-  const instructions = document.getElementById("instructions");
-
-  detected.textContent = app
-    ? "Aplicación detectada: " + app.name
-    : isAndroidWebView
-      ? "Detectamos un navegador WebView"
-      : "No detectamos una aplicación compatible";
-
-  platform.textContent = isAndroid
-    ? "Sistema: Android"
-    : isIOS
-      ? "Sistema: iOS"
-      : "Sistema: otro dispositivo";
-
-  if (!isInApp) {
-    button.style.display = "none";
-    detected.textContent = "No detectamos un navegador interno.";
-    return;
-  }
-
-  // Acción del usuario
-  button.addEventListener("click", function () {
-
-    if (isAndroid) {
-
-      const url = new URL(window.location.href);
-
-      const destination =
-        url.host + url.pathname + url.search + url.hash;
-
-      const fallback = new URL(window.location.href);
-      fallback.searchParams.set("manual", "1");
-
-      const intent =
-        "intent://" + destination +
-        "#Intent;" +
-        "scheme=https;" +
-        "action=android.intent.action.VIEW;" +
-        "category=android.intent.category.BROWSABLE;" +
-        "S.browser_fallback_url=" +
-        encodeURIComponent(fallback.href) +
-        ";end";
-
-      window.location.href = intent;
-
-    } else {
-
-      instructions.style.display = "block";
-
-    }
-  });
-
-  // Mostrar instrucciones si vuelve el fallback
-  if (new URLSearchParams(location.search).has("manual")) {
-    instructions.style.display = "block";
-  }
-
-})();
-</script>
-
-</body>
-</html>
+// Clasificación
+const isInternalBrowser =
+  isEmbedded || !isNormalBrowser;
