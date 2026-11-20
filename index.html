@@ -4,45 +4,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prueba navegador Meta</title>
+<title>Detector de navegador</title>
+<style>
+body {
+  background: #101114;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 35px 20px;
+}
+.card {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #202127;
+  border-radius: 16px;
+}
+button {
+  width: 100%;
+  padding: 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #3478f6;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.small {
+  color: #aaa;
+  font-size: 13px;
+}
+#instructions {
+  display: none;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+</style>
 </head>
-<body style="font-family:Arial;text-align:center;padding:40px 20px">
+<body>
 
-<h2>Prueba navegador Meta</h2>
+<div class="card">
+  <h2>Continuar en navegador</h2>
 
-<p id="status">Comprobando navegador...</p>
+  <p id="detected">Analizando navegador...</p>
 
-<button id="open" style="padding:15px 25px;font-size:16px">
-Continuar en navegador externo
-</button>
+  <button id="open">
+    Abrir navegador externo
+  </button>
+
+  <div id="instructions">
+    <p>
+      No pudimos abrir el navegador automáticamente.
+    </p>
+    <p>
+      Tocá los tres puntos (⋮) de la aplicación
+      y seleccioná "Abrir en navegador".
+    </p>
+  </div>
+
+  <p class="small" id="platform"></p>
+</div>
 
 <script>
-const ua = navigator.userAgent;
+(function () {
 
-const isMeta =
-/Instagram|FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(ua);
+  const ua = navigator.userAgent || "";
 
-document.getElementById("status").textContent =
-isMeta
-? "Estás en el navegador interno de Meta"
-: "No detectamos el navegador interno de Meta";
+  // Sistema operativo
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
 
-document.getElementById("open").onclick = () => {
-  const url = new URL(location.href);
+  // Aplicación de origen
+  const apps = [
+    { name: "Instagram", regex: /Instagram/i },
+    { name: "Facebook", regex: /FBAN|FBAV|FB_IAB|FB4A|FBIOS/i },
+    { name: "Messenger", regex: /MessengerForiOS|FB_IAB/i },
+    { name: "TikTok", regex: /musical_ly|trill|TikTok/i },
+    { name: "Discord", regex: /Discord/i },
+    { name: "Snapchat", regex: /Snapchat/i },
+    { name: "Telegram", regex: /Telegram/i },
+    { name: "X (Twitter)", regex: /Twitter|X-Client/i },
+    { name: "LinkedIn", regex: /LinkedInApp/i },
+    { name: "Pinterest", regex: /Pinterest/i }
+  ];
 
-  const destination = url.host + url.pathname +
-    url.search + url.hash;
+  const app = apps.find(item => item.regex.test(ua));
 
-  const fallback = encodeURIComponent(location.href);
+  // Detectar si estamos dentro de una aplicación
+  const isAndroidWebView = /; wv\)/i.test(ua);
 
-  location.href =
-    "intent://" + destination +
-    "#Intent;scheme=https;" +
-    "action=android.intent.action.VIEW;" +
-    "category=android.intent.category.BROWSABLE;" +
-    "S.browser_fallback_url=" + fallback +
-    ";end";
-};
+  const isInApp = !!app || isAndroidWebView;
+
+  const detected = document.getElementById("detected");
+  const platform = document.getElementById("platform");
+  const button = document.getElementById("open");
+  const instructions = document.getElementById("instructions");
+
+  detected.textContent = app
+    ? "Aplicación detectada: " + app.name
+    : isAndroidWebView
+      ? "Detectamos un navegador WebView"
+      : "No detectamos una aplicación compatible";
+
+  platform.textContent = isAndroid
+    ? "Sistema: Android"
+    : isIOS
+      ? "Sistema: iOS"
+      : "Sistema: otro dispositivo";
+
+  if (!isInApp) {
+    button.style.display = "none";
+    detected.textContent = "No detectamos un navegador interno.";
+    return;
+  }
+
+  // Acción del usuario
+  button.addEventListener("click", function () {
+
+    if (isAndroid) {
+
+      const url = new URL(window.location.href);
+
+      const destination =
+        url.host + url.pathname + url.search + url.hash;
+
+      const fallback = new URL(window.location.href);
+      fallback.searchParams.set("manual", "1");
+
+      const intent =
+        "intent://" + destination +
+        "#Intent;" +
+        "scheme=https;" +
+        "action=android.intent.action.VIEW;" +
+        "category=android.intent.category.BROWSABLE;" +
+        "S.browser_fallback_url=" +
+        encodeURIComponent(fallback.href) +
+        ";end";
+
+      window.location.href = intent;
+
+    } else {
+
+      instructions.style.display = "block";
+
+    }
+  });
+
+  // Mostrar instrucciones si vuelve el fallback
+  if (new URLSearchParams(location.search).has("manual")) {
+    instructions.style.display = "block";
+  }
+
+})();
 </script>
 
 </body>
