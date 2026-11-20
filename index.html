@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba navegador Meta</title>
+</head>
+<body style="font-family:Arial;text-align:center;padding:40px 20px">
+
+<h2>Prueba navegador Meta</h2>
+
+<p id="status">Comprobando navegador...</p>
+
+<button id="open" style="padding:15px 25px;font-size:16px">
+Continuar en navegador externo
+</button>
+
+<script>
+const ua = navigator.userAgent;
+
+const isMeta =
+/Instagram|FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(ua);
+
+document.getElementById("status").textContent =
+isMeta
+? "Estás en el navegador interno de Meta"
+: "No detectamos el navegador interno de Meta";
+
+document.getElementById("open").onclick = () => {
+  const url = new URL(location.href);
+
+  const destination = url.host + url.pathname +
+    url.search + url.hash;
+
+  const fallback = encodeURIComponent(location.href);
+
+  location.href =
+    "intent://" + destination +
+    "#Intent;scheme=https;" +
+    "action=android.intent.action.VIEW;" +
+    "category=android.intent.category.BROWSABLE;" +
+    "S.browser_fallback_url=" + fallback +
+    ";end";
+};
+</script>
+
+</body>
+</html>
